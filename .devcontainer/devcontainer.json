@@ -5,6 +5,11 @@
   "forwardPorts": [3000],
   "containerEnv": {
     "BROWSER": "none"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
   }
   // Chromium headless deps (libnss3, libgbm1, ...) are intentionally NOT installed
   // here. Studio's live preview plays in the viewer's own browser, not a
