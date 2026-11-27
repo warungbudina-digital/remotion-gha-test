@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.jsx --port=3000 --ipv4"
+  },
   "dependencies": {
     "remotion": "4.0.290",
     "@remotion/cli": "4.0.290",

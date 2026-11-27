@@ -1,0 +1,14 @@
+{
+  "name": "remotion-studio",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "postCreateCommand": "npm install",
+  "forwardPorts": [3000],
+  "containerEnv": {
+    "BROWSER": "none"
+  }
+  // Chromium headless deps (libnss3, libgbm1, ...) are intentionally NOT installed
+  // here. Studio's live preview plays in the viewer's own browser, not a
+  // server-side headless Chromium -- those libs are only needed if you click
+  // "Render" inside Studio itself. If that's ever needed, copy the apt-get
+  // list from .github/workflows/render.yml.
+}
