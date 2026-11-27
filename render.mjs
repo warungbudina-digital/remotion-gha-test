@@ -49,4 +49,5 @@ try {
     path.join(outDir, "status.json"),
     JSON.stringify({ ok: false, error: String(err) }, null, 2)
   );
+  process.exitCode = 1;
 }
