@@ -1,0 +1,71 @@
+name: Render Remotion Repro
+
+# Dipicu remotion_api.py (viral-pipeline, backend input_remotion.html) lewat
+# `gh workflow run` -- bukan untuk dipakai manual biasa (props_gz_b64 adalah
+# gzip+base64 dari <job>.remotion-props.json, bukan sesuatu yg manusia ketik).
+# render.yml (TestComposition/CarouselOmega3) TIDAK disentuh, file ini berdiri
+# sendiri.
+on:
+  workflow_dispatch:
+    inputs:
+      props_gz_b64:
+        description: "gzip+base64 dari <job>.remotion-props.json (ir_to_remotion.py)"
+        required: true
+      job_id:
+        description: "job-<id>, dipakai di nama run saja"
+        required: true
+      nonce:
+        description: "token acak dari remotion_api.py, dipakai backend mencocokkan run_id saat polling"
+        required: true
+
+run-name: "repro ${{ inputs.job_id }} ${{ inputs.nonce }}"
+
+concurrency:
+  group: render-repro
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      # Remotion's bundled Chromium needs these libs on a stock Ubuntu runner.
+      - name: Install Chromium headless deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 libdbus-1-3 libatk1.0-0 libgbm1 libasound2t64 \
+            libxrandr2 libxkbcommon0 libxfixes3 libxcomposite1 libxdamage1 \
+            libatk-bridge2.0-0 libpango-1.0-0 libcairo2 libcups2 ffmpeg
+
+      - name: Tulis props.json dari input (env-var, bukan interpolasi shell)
+        env:
+          PROPS_GZ_B64: ${{ inputs.props_gz_b64 }}
+        run: |
+          printf '%s' "$PROPS_GZ_B64" | base64 -d | gunzip > props.json
+          node -e "JSON.parse(require('fs').readFileSync('props.json','utf8'))" \
+            && echo "props.json valid JSON"
+
+      - name: Render
+        run: node render-repro.mjs props.json repro.mp4
+
+      - name: ffprobe verifikasi
+        if: always()
+        run: ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 out/repro.mp4 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repro-video
+          path: out/repro.mp4
+          if-no-files-found: error
+          retention-days: 3
